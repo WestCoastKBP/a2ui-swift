@@ -36,6 +36,17 @@ public final class MessageProcessor {
 
     private let catalogs: [Catalog]
 
+    /// Protocol version written into client data model payloads. Defaults to A2UI 1.0.
+    public var protocolVersion: A2UIProtocolVersion = .v1_0
+
+    /// Called for each A2UI 1.0 `callRendererFunction` the agent sends. The processor does not
+    /// execute the function itself; the handler decides and answers with
+    /// `A2uiClientMessage.rendererFunctionResponse`.
+    public var rendererFunctionHandler: ((CallRendererFunctionPayload) -> Void)?
+
+    /// Called for each A2UI 1.0 `agentFunctionResponse` (answer to a `callAgentFunction`).
+    public var agentFunctionResponseHandler: ((AgentFunctionResponsePayload) -> Void)?
+
     /// Creates a new message processor.
     ///
     /// - Parameters:
@@ -76,7 +87,7 @@ public final class MessageProcessor {
             surfaces[surface.id] = surface.dataModel.get("/")
         }
         guard !surfaces.isEmpty else { return nil }
-        return A2uiClientDataModel(version: "v0.9", surfaces: surfaces)
+        return A2uiClientDataModel(version: protocolVersion.rawValue, surfaces: surfaces)
     }
 
     /// Returns the client capabilities for this renderer, populated from the loaded catalogs.
@@ -224,14 +235,28 @@ public final class MessageProcessor {
             try processUpdateDataModel(payload)
         case .deleteSurface(let payload):
             processDeleteSurface(payload)
+        case .callRendererFunction(let payload):
+            rendererFunctionHandler?(payload)
+        case .agentFunctionResponse(let payload):
+            agentFunctionResponseHandler?(payload)
         }
     }
 
     // MARK: - Handlers
 
     private func processCreateSurface(_ payload: CreateSurfacePayload) throws {
-        guard let catalog = catalogs.first(where: { $0.id == payload.catalogId }) else {
-            throw A2uiStateError("Catalog not found: \(payload.catalogId)")
+        // A2UI 1.0 makes `catalogId` optional. Without it the only unambiguous choice is a
+        // processor that has exactly one catalog (the spec itself reports an error here).
+        let catalog: Catalog
+        if let catalogId = payload.catalogId {
+            guard let found = catalogs.first(where: { $0.id == catalogId }) else {
+                throw A2uiStateError("Catalog not found: \(catalogId)")
+            }
+            catalog = found
+        } else if catalogs.count == 1, let only = catalogs.first {
+            catalog = only
+        } else {
+            throw A2uiStateError("createSurface for \(payload.surfaceId) has no catalogId and the catalog is ambiguous.")
         }
 
         if model.getSurface(payload.surfaceId) != nil {
@@ -245,6 +270,16 @@ public final class MessageProcessor {
             sendDataModel: payload.sendDataModel
         )
         model.addSurface(surface)
+
+        // A2UI 1.0: initial data model first, then initial components.
+        if let initialData = payload.dataModel {
+            try surface.dataModel.set("/", value: initialData)
+        }
+        if let components = payload.components, !components.isEmpty {
+            try processUpdateComponents(
+                UpdateComponentsPayload(surfaceId: payload.surfaceId, components: components)
+            )
+        }
     }
 
     private func processDeleteSurface(_ payload: DeleteSurfacePayload) {

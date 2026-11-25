@@ -106,7 +106,7 @@ struct MessageProcessorTests {
 
         let dm = processor.getClientDataModel()
         #expect(dm != nil)
-        #expect(dm?.version == "v0.9")
+        #expect(dm?.version == "1.0")
         #expect(dm?.surfaces["s1"] != nil)
         #expect(dm?.surfaces["s2"] == nil)
     }

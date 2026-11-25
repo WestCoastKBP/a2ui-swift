@@ -35,11 +35,19 @@ public struct FunctionCall: Codable, Sendable, Equatable {
     public var call: String
     public var args: [String: AnyCodable]
     public var returnType: FunctionCallReturnType?
+    /// A2UI 1.0: optional catalog that defines the function (`catalogId` on a function call).
+    public var catalogId: String?
 
-    public init(call: String, args: [String: AnyCodable] = [:], returnType: FunctionCallReturnType? = nil) {
+    public init(
+        call: String,
+        args: [String: AnyCodable] = [:],
+        returnType: FunctionCallReturnType? = nil,
+        catalogId: String? = nil
+    ) {
         self.call = call
         self.args = args
         self.returnType = returnType
+        self.catalogId = catalogId
     }
 }
 
@@ -121,7 +129,12 @@ public typealias DynamicStringList = Dynamic<[String]>
 
 // MARK: - Shared decoding helper
 
-/// Resolves `{"path":"..."}` → dataBinding, `{"call":"..."}` → functionCall.
+/// Resolves a dynamic object into a data binding or a function call.
+///
+/// A2UI 1.0 spells the directives `{"@path":"..."}` and `{"@call":"...","args":{...}}`;
+/// A2UI 0.9 spells them `{"path":"..."}` and `{"call":"..."}`. Both are accepted.
+/// The 1.0 form wins when both are present. (1.0 treats a plain `path`/`call` object as a
+/// literal value; this renderer keeps reading it as a directive for 0.9 compatibility.)
 enum DynamicDictResolver {
     enum Result {
         case dataBinding(path: String)
@@ -129,12 +142,15 @@ enum DynamicDictResolver {
     }
 
     static func resolve(_ dict: [String: AnyCodable]) -> Result? {
-        if let callName = dict["call"]?.stringValue {
+        if let callName = dict["@call"]?.stringValue ?? dict["call"]?.stringValue {
             let args = dict["args"]?.dictionaryValue ?? [:]
             let returnType = dict["returnType"]?.stringValue.flatMap(FunctionCallReturnType.init(rawValue:))
-            return .functionCall(FunctionCall(call: callName, args: args, returnType: returnType))
+            let catalogId = dict["catalogId"]?.stringValue
+            return .functionCall(
+                FunctionCall(call: callName, args: args, returnType: returnType, catalogId: catalogId)
+            )
         }
-        if let path = dict["path"]?.stringValue {
+        if let path = dict["@path"]?.stringValue ?? dict["path"]?.stringValue {
             return .dataBinding(path: path)
         }
         return nil
@@ -314,10 +330,21 @@ public enum ChildList: Codable, Sendable {
 /// Mirrors WebCore `CheckRuleSchema`.
 public struct CheckRule: Codable, Sendable {
     public var condition: DynamicBoolean
+    /// A2UI 1.0 makes `message` optional; a missing message decodes as an empty string.
     public var message: String
 
-    public init(condition: DynamicBoolean, message: String) {
+    public init(condition: DynamicBoolean, message: String = "") {
         self.condition = condition
         self.message = message
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case condition, message
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        condition = try container.decode(DynamicBoolean.self, forKey: .condition)
+        message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""
     }
 }

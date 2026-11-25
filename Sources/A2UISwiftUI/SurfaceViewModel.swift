@@ -109,6 +109,10 @@ public final class SurfaceViewModel {
             try handleUpdateDataModel(payload)
         case .deleteSurface:
             handleDeleteSurface()
+        case .callRendererFunction, .agentFunctionResponse:
+            // A2UI 1.0 function-call messages are transport-level; a single-surface view model
+            // has nothing to render for them. Use `MessageProcessor` handlers to react.
+            break
         }
     }
 
@@ -128,7 +132,7 @@ public final class SurfaceViewModel {
     public func getClientDataModel() -> A2uiClientDataModel? {
         guard surface.sendDataModel else { return nil }
         return A2uiClientDataModel(
-            version: "v0.9",
+            version: A2UIProtocolVersion.v1_0.rawValue,
             surfaces: [surface.id: surface.dataModel.get("/") ?? .null]
         )
     }
@@ -150,6 +154,16 @@ public final class SurfaceViewModel {
                 if let s = value.stringValue { styles[key] = s }
             }
             a2uiStyle = A2UIStyle(from: styles)
+        }
+        // A2UI 1.0: apply the inline data model first, then the inline components.
+        if let initialData = payload.dataModel {
+            try? surface.dataModel.set("/", value: initialData)
+        }
+        for component in payload.components ?? [] {
+            components[component.id] = component
+            if component.id == Self.defaultRootId {
+                rootComponentId = Self.defaultRootId
+            }
         }
         rebuildComponentTree()
     }

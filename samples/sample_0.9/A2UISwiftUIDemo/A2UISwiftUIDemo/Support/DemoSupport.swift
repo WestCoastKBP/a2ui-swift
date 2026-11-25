@@ -109,6 +109,9 @@ final class SurfaceStore {
             try viewModels[payload.surfaceId]?.processMessage(message)
             viewModels[payload.surfaceId] = nil
             orderedSurfaceIds.removeAll { $0 == payload.surfaceId }
+
+        case .callRendererFunction, .agentFunctionResponse:
+            break
         }
     }
 
@@ -156,6 +159,8 @@ enum DemoMessages {
             case .updateComponents(let p): return p.surfaceId
             case .updateDataModel(let p): return p.surfaceId
             case .deleteSurface(let p): return p.surfaceId
+            case .callRendererFunction(let p): if let id = p.surfaceId { return id }
+            case .agentFunctionResponse: break
             }
         }
         return nil
