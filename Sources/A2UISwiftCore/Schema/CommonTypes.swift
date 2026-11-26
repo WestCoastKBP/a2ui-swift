@@ -142,18 +142,22 @@ enum DynamicDictResolver {
     }
 
     static func resolve(_ dict: [String: AnyCodable]) -> Result? {
-        if let callName = dict["@call"]?.stringValue ?? dict["call"]?.stringValue {
-            let args = dict["args"]?.dictionaryValue ?? [:]
-            let returnType = dict["returnType"]?.stringValue.flatMap(FunctionCallReturnType.init(rawValue:))
-            let catalogId = dict["catalogId"]?.stringValue
-            return .functionCall(
-                FunctionCall(call: callName, args: args, returnType: returnType, catalogId: catalogId)
-            )
-        }
-        if let path = dict["@path"]?.stringValue ?? dict["path"]?.stringValue {
-            return .dataBinding(path: path)
-        }
+        // 1.0 directives first, so `{"@path": ..., "call": ...}` stays a binding.
+        if let callName = dict["@call"]?.stringValue { return functionCall(callName, dict) }
+        if let path = dict["@path"]?.stringValue { return .dataBinding(path: path) }
+        // 0.9 spellings.
+        if let callName = dict["call"]?.stringValue { return functionCall(callName, dict) }
+        if let path = dict["path"]?.stringValue { return .dataBinding(path: path) }
         return nil
+    }
+
+    private static func functionCall(_ callName: String, _ dict: [String: AnyCodable]) -> Result {
+        let args = dict["args"]?.dictionaryValue ?? [:]
+        let returnType = dict["returnType"]?.stringValue.flatMap(FunctionCallReturnType.init(rawValue:))
+        let catalogId = dict["catalogId"]?.stringValue
+        return .functionCall(
+            FunctionCall(call: callName, args: args, returnType: returnType, catalogId: catalogId)
+        )
     }
 }
 

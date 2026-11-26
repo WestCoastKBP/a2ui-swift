@@ -349,7 +349,9 @@ extension RawComponent: Codable {
         // `component` is optional at decode time; MessageProcessor validates its presence for new components.
         self.component = dict.removeValue(forKey: "component")?.stringValue ?? ""
         self.weight = dict.removeValue(forKey: "weight")?.numberValue
-        let accRaw = dict.removeValue(forKey: "@accessibility") ?? dict.removeValue(forKey: "accessibility")
+        let accV1 = dict.removeValue(forKey: "@accessibility")
+        let accV09 = dict.removeValue(forKey: "accessibility")
+        let accRaw = accV1 ?? accV09
         if case .dictionary(let accDict)? = accRaw {
             self.accessibility = A2UIAccessibility.decode(from: accDict)
         } else {
@@ -368,8 +370,14 @@ extension RawComponent: Codable {
         dict["id"] = .string(id)
         dict["component"] = .string(component)
         if let w = weight { dict["weight"] = .number(w) }
+        // Envelope keys follow the encoder's wire version: `@accessibility` / `@checks` for 1.0,
+        // `accessibility` / `checks` for 0.9.
+        let isV1 = A2UIProtocolVersion.current(in: encoder) == .v1_0
         if let accDict = accessibility?.toDict() {
-            dict["accessibility"] = .dictionary(accDict)
+            dict[isV1 ? "@accessibility" : "accessibility"] = .dictionary(accDict)
+        }
+        if isV1, let checks = dict.removeValue(forKey: "checks") {
+            dict["@checks"] = checks
         }
         if let catalogId { dict["@catalogId"] = .string(catalogId) }
         if let metadata { dict["@metadata"] = metadata }

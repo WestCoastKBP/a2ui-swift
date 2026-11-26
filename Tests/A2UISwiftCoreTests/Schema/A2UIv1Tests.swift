@@ -363,4 +363,35 @@ struct A2UIv1Tests {
         #expect(payload.callFunction.returnType == .string)
         #expect(payload.callFunction.call == "now")
     }
+
+    @Test("@path wins over a plain call key")
+    func atPathWinsOverPlainCall() {
+        let result = DynamicDictResolver.resolve(["@path": .string("/call/who"), "call": .string("voice")])
+        guard case .dataBinding(let path)? = result else {
+            Issue.record("expected a data binding")
+            return
+        }
+        #expect(path == "/call/who")
+    }
+
+    @Test("component envelope keys are written as @accessibility/@checks for 1.0 and plain for 0.9")
+    func componentEnvelopeKeysFollowVersion() throws {
+        let json = #"{"id":"f","component":"TextField","label":"Name","@accessibility":{"label":"Name"},"@checks":[{"condition":true,"message":"x"}]}"#
+        let component = try JSONDecoder().decode(RawComponent.self, from: Data(json.utf8))
+
+        let v1 = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(component)) as? [String: Any])
+        #expect(v1["@accessibility"] != nil)
+        #expect(v1["@checks"] != nil)
+        #expect(v1["checks"] == nil)
+
+        let encoder = JSONEncoder()
+        encoder.userInfo[A2UIProtocolVersion.userInfoKey] = A2UIProtocolVersion.v0_9
+        let legacy = try #require(JSONSerialization.jsonObject(with: encoder.encode(component)) as? [String: Any])
+        #expect(legacy["accessibility"] != nil)
+        #expect(legacy["checks"] != nil)
+        #expect(legacy["@checks"] == nil)
+
+        let roundTrip = try JSONDecoder().decode(RawComponent.self, from: JSONEncoder().encode(component))
+        #expect(roundTrip == component)
+    }
 }
