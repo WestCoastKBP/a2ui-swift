@@ -261,6 +261,7 @@ public struct CallRendererFunctionPayload: Codable, Sendable {
             "args": .dictionary(callFunction.args),
         ]
         if let catalogId = callFunction.catalogId { dict["catalogId"] = .string(catalogId) }
+        if let returnType = callFunction.returnType { dict["returnType"] = .string(returnType.rawValue) }
         try container.encode(AnyCodable.dictionary(dict), forKey: .callFunction)
     }
 }

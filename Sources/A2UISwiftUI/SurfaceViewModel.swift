@@ -58,6 +58,10 @@ public final class SurfaceViewModel {
     /// Theme styles parsed from `createSurface.theme`.
     public var a2uiStyle = A2UIStyle()
 
+    /// Version written by ``getClientDataModel()``. Defaults to 1.0; set `.v0_9` for agents
+    /// that still validate `version == "v0.9"`.
+    public var protocolVersion: A2UIProtocolVersion = .v1_0
+
     /// The underlying surface. Views create `DataContext(surface: surface, ...)` from this.
     public private(set) var surface: SurfaceModel
 
@@ -132,7 +136,7 @@ public final class SurfaceViewModel {
     public func getClientDataModel() -> A2uiClientDataModel? {
         guard surface.sendDataModel else { return nil }
         return A2uiClientDataModel(
-            version: A2UIProtocolVersion.v1_0.rawValue,
+            version: protocolVersion.rawValue,
             surfaces: [surface.id: surface.dataModel.get("/") ?? .null]
         )
     }

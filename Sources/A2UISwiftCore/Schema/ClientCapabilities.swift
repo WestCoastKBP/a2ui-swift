@@ -98,7 +98,8 @@ public struct A2uiClientCapabilities: Codable {
            container.contains(key) {
             v09 = try container.decode(V09Capabilities.self, forKey: key)
             protocolVersion = .v1_0
-        } else if let key = DynamicKey(stringValue: A2UIProtocolVersion.v0_9.rawValue) {
+        } else if let key = DynamicKey(stringValue: A2UIProtocolVersion.v0_9.rawValue),
+                  container.contains(key) {
             v09 = try container.decode(V09Capabilities.self, forKey: key)
             protocolVersion = .v0_9
         } else {

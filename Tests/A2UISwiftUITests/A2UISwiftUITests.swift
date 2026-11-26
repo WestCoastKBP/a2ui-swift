@@ -19,3 +19,17 @@ import A2UISwiftUI
 
 // TODO: Add SwiftUI layer tests here
 // e.g. SurfaceViewModel, A2UIComponentView, CatalogItem overrides
+
+@Suite("SurfaceViewModel client data model")
+@MainActor
+struct SurfaceViewModelClientDataModelTests {
+
+    @Test("getClientDataModel writes 1.0 by default and v0.9 when asked")
+    func clientDataModelVersion() {
+        let surface = SurfaceModel(id: "s", catalog: Catalog(id: "c"), sendDataModel: true)
+        let model = SurfaceViewModel(surface: surface)
+        #expect(model.getClientDataModel()?.version == "1.0")
+        model.protocolVersion = .v0_9
+        #expect(model.getClientDataModel()?.version == "v0.9")
+    }
+}

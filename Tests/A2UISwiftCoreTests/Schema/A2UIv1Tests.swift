@@ -337,4 +337,30 @@ struct A2UIv1Tests {
         #expect(decoded.protocolVersion == .v0_9)
         #expect(decoded.v09.supportedCatalogIds == ["c"])
     }
+
+    // MARK: - Review fixes
+
+    @Test("capabilities keyed by neither 1.0 nor v0.9 give a descriptive error")
+    func capabilitiesUnknownKey() throws {
+        do {
+            _ = try JSONDecoder().decode(A2uiClientCapabilities.self, from: Data(#"{"unsupported":{}}"#.utf8))
+            Issue.record("expected a decoding error")
+        } catch DecodingError.dataCorrupted(let context) {
+            #expect(context.debugDescription.contains("1.0"))
+        }
+    }
+
+    @Test("callRendererFunction keeps returnType when re-encoded")
+    func callRendererFunctionReturnTypeRoundTrip() throws {
+        let message = try decode(
+            #"{"version":"1.0","callRendererFunction":{"functionCallId":"f2","callFunction":{"@call":"now","returnType":"string"}}}"#
+        )
+        let data = try JSONEncoder().encode(message)
+        guard case .callRendererFunction(let payload) = try JSONDecoder().decode(A2uiMessage.self, from: data) else {
+            Issue.record("expected callRendererFunction")
+            return
+        }
+        #expect(payload.callFunction.returnType == .string)
+        #expect(payload.callFunction.call == "now")
+    }
 }
