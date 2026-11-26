@@ -81,14 +81,40 @@ public struct A2uiClientCapabilities: Codable {
         }
     }
 
+    /// The supported catalogs. The property keeps its 0.9 name for source compatibility;
+    /// it is written under the key of ``protocolVersion`` (`"1.0"` by default, `"v0.9"` for 0.9).
     public let v09: V09Capabilities
+    /// Namespace the capabilities are published under in transport metadata.
+    public let protocolVersion: A2UIProtocolVersion
 
-    private enum CodingKeys: String, CodingKey {
-        case v09 = "v0.9"
+    public init(v09: V09Capabilities, protocolVersion: A2UIProtocolVersion = .v1_0) {
+        self.v09 = v09
+        self.protocolVersion = protocolVersion
     }
 
-    public init(v09: V09Capabilities) {
-        self.v09 = v09
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: DynamicKey.self)
+        if let key = DynamicKey(stringValue: A2UIProtocolVersion.v1_0.rawValue),
+           container.contains(key) {
+            v09 = try container.decode(V09Capabilities.self, forKey: key)
+            protocolVersion = .v1_0
+        } else if let key = DynamicKey(stringValue: A2UIProtocolVersion.v0_9.rawValue),
+                  container.contains(key) {
+            v09 = try container.decode(V09Capabilities.self, forKey: key)
+            protocolVersion = .v0_9
+        } else {
+            throw DecodingError.dataCorrupted(.init(
+                codingPath: decoder.codingPath,
+                debugDescription: "Capabilities must be keyed by \"1.0\" or \"v0.9\"."
+            ))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: DynamicKey.self)
+        if let key = DynamicKey(stringValue: protocolVersion.rawValue) {
+            try container.encode(v09, forKey: key)
+        }
     }
 
     /// Creates a capabilities object from an array of catalogs.
@@ -101,13 +127,15 @@ public struct A2uiClientCapabilities: Codable {
     /// ```
     public static func make(
         from catalogs: [Catalog],
-        inlineCatalogs: [InlineCatalog]? = nil
+        inlineCatalogs: [InlineCatalog]? = nil,
+        protocolVersion: A2UIProtocolVersion = .v1_0
     ) -> A2uiClientCapabilities {
         A2uiClientCapabilities(
             v09: V09Capabilities(
                 supportedCatalogIds: catalogs.map(\.id),
                 inlineCatalogs: inlineCatalogs
-            )
+            ),
+            protocolVersion: protocolVersion
         )
     }
 }

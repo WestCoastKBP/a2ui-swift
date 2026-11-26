@@ -73,7 +73,7 @@ final class ViewController: NSViewController {
     private static func surfaceInfo(in messages: [A2uiMessage]) -> (String, String)? {
         for message in messages {
             if case .createSurface(let payload) = message {
-                return (payload.surfaceId, payload.catalogId)
+                return (payload.surfaceId, payload.catalogId ?? "")
             }
         }
         return nil

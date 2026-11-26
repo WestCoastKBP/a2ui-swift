@@ -228,6 +228,8 @@ final class TravelPlannerViewModel {
                 case .deleteSurface(let payload):
                     try surfaceViewModels[payload.surfaceId]?.processMessage(msg)
                     surfaceViewModels.removeValue(forKey: payload.surfaceId)
+                case .callRendererFunction, .agentFunctionResponse:
+                    break
                 }
             }
         } catch {

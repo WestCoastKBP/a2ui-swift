@@ -41,7 +41,7 @@ extension RawComponent {
     /// Parse accessibility attributes from the raw JSON.
     public func parseAccessibility(from rawJSON: AnyCodable?) -> A2UIAccessibility? {
         guard case .dictionary(let dict) = rawJSON,
-              let accDict = dict["accessibility"]?.dictionaryValue else { return nil }
+              let accDict = (dict["@accessibility"] ?? dict["accessibility"])?.dictionaryValue else { return nil }
         return A2UIAccessibility.decode(from: accDict)
     }
 }
@@ -52,10 +52,21 @@ extension RawComponent {
 public struct A2UIAccessibility: Sendable, Equatable {
     public var label: DynamicString?
     public var description: DynamicString?
+    /// A2UI 1.0: live-region politeness, one of `"off"`, `"polite"`, `"assertive"`.
+    public var live: String?
+    /// A2UI 1.0: hide the component from assistive technologies.
+    public var hidden: DynamicBoolean?
 
-    public init(label: DynamicString? = nil, description: DynamicString? = nil) {
+    public init(
+        label: DynamicString? = nil,
+        description: DynamicString? = nil,
+        live: String? = nil,
+        hidden: DynamicBoolean? = nil
+    ) {
         self.label = label
         self.description = description
+        self.live = live
+        self.hidden = hidden
     }
 }
 
@@ -67,7 +78,16 @@ extension A2UIAccessibility {
         var acc = A2UIAccessibility()
         acc.label        = decodeDynamic(accDict["label"])
         acc.description  = decodeDynamic(accDict["description"])
-        guard acc.label != nil || acc.description != nil else { return nil }
+        if let live = accDict["live"]?.stringValue, ["off", "polite", "assertive"].contains(live) {
+            acc.live = live
+        }
+        if let rawHidden = accDict["hidden"],
+           let data = try? JSONEncoder().encode(rawHidden) {
+            acc.hidden = try? JSONDecoder().decode(DynamicBoolean.self, from: data)
+        }
+        guard acc.label != nil || acc.description != nil || acc.live != nil || acc.hidden != nil else {
+            return nil
+        }
         return acc
     }
 
@@ -77,6 +97,12 @@ extension A2UIAccessibility {
         var d: [String: AnyCodable] = [:]
         if let label       { d["label"]       = encodeDynamic(label) }
         if let description { d["description"] = encodeDynamic(description) }
+        if let live { d["live"] = .string(live) }
+        if let hidden,
+           let data = try? JSONEncoder().encode(hidden),
+           let decoded = try? JSONDecoder().decode(AnyCodable.self, from: data) {
+            d["hidden"] = decoded
+        }
         return d.isEmpty ? nil : d
     }
 

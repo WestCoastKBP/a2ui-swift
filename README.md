@@ -10,7 +10,7 @@
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-007AFF?logo=apple)](#requirements)
 [![SPM](https://img.shields.io/badge/SwiftPM-compatible-brightgreen)](#installation)
 [![Documentation](https://img.shields.io/badge/DocC-documentation-blue?logo=swift&logoColor=white)](https://bbc6bae9.github.io/a2ui-swift/documentation/)
-[![A2UI Spec](https://img.shields.io/badge/A2UI%20spec-v0.9.1-8A2BE2)](https://github.com/a2ui-project/a2ui)
+[![A2UI Spec](https://img.shields.io/badge/A2UI%20spec-v1.0-8A2BE2)](https://github.com/a2ui-project/a2ui)
 [![License](https://img.shields.io/github/license/BBC6BAE9/a2ui-swift)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/BBC6BAE9/a2ui-swift?style=social)](https://github.com/BBC6BAE9/a2ui-swift/stargazers)
 
@@ -46,7 +46,7 @@ A2UI-Swift is built for the middle ground: **agent-generated UI as data, rendere
 ## What You Get
 
 - **Native rendering across Apple platforms**: SwiftUI, UIKit, and AppKit renderers share one protocol model.
-- **A2UI v0.9 / v0.9.1 support**: message processing, surfaces, data model updates, actions, expressions, checks, templates, and catalogs.
+- **A2UI 1.0 support (v0.9 / v0.9.1 messages still read)**: message processing, surfaces, data model updates, actions, expressions, checks, templates, and catalogs.
 - **17 built-in components**: Text, Image, Icon, Button, TextField, CheckBox, Slider, ChoicePicker, DateTimeInput, Row, Column, List, Card, Tabs, Modal, Divider, AudioPlayer, and Video.
 - **Two-way data binding**: inputs write back to the local data model, while streaming agent updates can rebuild or update the UI in place.
 - **Custom component catalogs**: expose your own trusted SwiftUI, UIKit, or AppKit components to the agent without allowing arbitrary code execution.

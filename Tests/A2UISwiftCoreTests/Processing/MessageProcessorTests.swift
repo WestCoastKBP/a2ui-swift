@@ -106,7 +106,7 @@ struct MessageProcessorTests {
 
         let dm = processor.getClientDataModel()
         #expect(dm != nil)
-        #expect(dm?.version == "v0.9")
+        #expect(dm?.version == "1.0")
         #expect(dm?.surfaces["s1"] != nil)
         #expect(dm?.surfaces["s2"] == nil)
     }
@@ -653,5 +653,33 @@ struct MessageProcessorTests {
         let errors = processor.processMessages([createSurfaceMsg(surfaceId: "s1")])
         #expect(errors.isEmpty)
         #expect(processor.model.getSurface("s1") != nil)
+    }
+
+    @Test("createSurface rolls the surface back when its inline components fail")
+    func createSurfaceRollsBackOnInlineFailure() throws {
+        let processor = makeProcessor()
+        let message = try JSONDecoder().decode(
+            A2uiMessage.self,
+            from: Data(#"{"version":"1.0","createSurface":{"surfaceId":"broken","catalogId":"test-catalog","components":[{"id":"root","component":""}]}}"#.utf8)
+        )
+
+        let errors = processor.processMessages([message])
+
+        #expect(errors.count == 1)
+        #expect(processor.model.getSurface("broken") == nil)
+        // The id is free again: a correct createSurface for it succeeds.
+        #expect(processor.processMessages([createSurfaceMsg(surfaceId: "broken")]).isEmpty)
+    }
+
+    @Test("clientCapabilities follow the processor protocol version")
+    func clientCapabilitiesFollowProtocolVersion() throws {
+        let processor = makeProcessor()
+        processor.protocolVersion = .v0_9
+
+        let data = try JSONEncoder().encode(processor.clientCapabilities)
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        #expect(json["v0.9"] != nil)
+        #expect(json["1.0"] == nil)
     }
 }

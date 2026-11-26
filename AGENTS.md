@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository. (Mirrors `CLAUDE.m
 
 ## What this is
 
-Swift renderer for the [A2UI protocol](https://github.com/google/A2UI) — converts JSON UI descriptions streamed from AI agents into native Apple UI. SwiftUI is the feature-complete renderer; UIKit and AppKit are in development. The current spec version is **v0.9**; v0.8 lives in the deprecated `v_08` module and should not be extended.
+Swift renderer for the [A2UI protocol](https://github.com/google/A2UI) — converts JSON UI descriptions streamed from AI agents into native Apple UI. SwiftUI is the feature-complete renderer; UIKit and AppKit are in development. The current spec version is **1.0** (v0.9 / v0.9.1 messages are still accepted); v0.8 lives in the deprecated `v_08` module and should not be extended.
 
 ## Commands
 
