@@ -116,7 +116,8 @@ public final class MessageProcessor {
             from: catalogs,
             inlineCatalogs: options.includeInlineCatalogs
                 ? catalogs.map(generateInlineCatalog)
-                : nil
+                : nil,
+            protocolVersion: protocolVersion
         )
     }
 

@@ -670,4 +670,16 @@ struct MessageProcessorTests {
         // The id is free again: a correct createSurface for it succeeds.
         #expect(processor.processMessages([createSurfaceMsg(surfaceId: "broken")]).isEmpty)
     }
+
+    @Test("clientCapabilities follow the processor protocol version")
+    func clientCapabilitiesFollowProtocolVersion() throws {
+        let processor = makeProcessor()
+        processor.protocolVersion = .v0_9
+
+        let data = try JSONEncoder().encode(processor.clientCapabilities)
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        #expect(json["v0.9"] != nil)
+        #expect(json["1.0"] == nil)
+    }
 }
