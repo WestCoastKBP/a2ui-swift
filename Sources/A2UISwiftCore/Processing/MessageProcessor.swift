@@ -272,13 +272,20 @@ public final class MessageProcessor {
         model.addSurface(surface)
 
         // A2UI 1.0: initial data model first, then initial components.
-        if let initialData = payload.dataModel {
-            try surface.dataModel.set("/", value: initialData)
-        }
-        if let components = payload.components, !components.isEmpty {
-            try processUpdateComponents(
-                UpdateComponentsPayload(surfaceId: payload.surfaceId, components: components)
-            )
+        // A failure in the inline content rolls the new surface back, so a
+        // half-built surface never stays in the group.
+        do {
+            if let initialData = payload.dataModel {
+                try surface.dataModel.set("/", value: initialData)
+            }
+            if let components = payload.components, !components.isEmpty {
+                try processUpdateComponents(
+                    UpdateComponentsPayload(surfaceId: payload.surfaceId, components: components)
+                )
+            }
+        } catch {
+            model.deleteSurface(payload.surfaceId)
+            throw error
         }
     }
 

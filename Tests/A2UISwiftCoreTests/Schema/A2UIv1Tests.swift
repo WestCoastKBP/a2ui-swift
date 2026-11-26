@@ -142,7 +142,7 @@ struct A2UIv1Tests {
 
         let function = try JSONDecoder().decode(
             DynamicString.self,
-            from: Data(##"{"@call":"formatString","args":{"value":"## ${/title}"}}"##.utf8)
+            from: Data(###"{"@call":"formatString","args":{"value":"## ${/title}"}}"###.utf8)
         )
         guard case .functionCall(let call) = function else {
             Issue.record("expected function call")

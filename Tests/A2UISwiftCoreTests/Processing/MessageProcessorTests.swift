@@ -654,4 +654,20 @@ struct MessageProcessorTests {
         #expect(errors.isEmpty)
         #expect(processor.model.getSurface("s1") != nil)
     }
+
+    @Test("createSurface rolls the surface back when its inline components fail")
+    func createSurfaceRollsBackOnInlineFailure() throws {
+        let processor = makeProcessor()
+        let message = try JSONDecoder().decode(
+            A2uiMessage.self,
+            from: Data(#"{"version":"1.0","createSurface":{"surfaceId":"broken","catalogId":"test-catalog","components":[{"id":"root","component":""}]}}"#.utf8)
+        )
+
+        let errors = processor.processMessages([message])
+
+        #expect(errors.count == 1)
+        #expect(processor.model.getSurface("broken") == nil)
+        // The id is free again: a correct createSurface for it succeeds.
+        #expect(processor.processMessages([createSurfaceMsg(surfaceId: "broken")]).isEmpty)
+    }
 }
